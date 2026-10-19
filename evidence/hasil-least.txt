@@ -1,0 +1,49 @@
+[Worker 1] siap di port 9001
+[Worker 2] siap di port 9002
+[Worker 3] siap di port 9003
+[Broker] siap di port 9000, strategi=least
+[Broker] request '1 50000' -> worker 1
+[Worker 1] app=1 isi=50000 -> 5133
+[Broker] balasan '1 5133' | terlayani: {1: 1, 2: 0, 3: 0}
+Dibalas worker 1: 5133
+[Broker] request '2 halo' -> worker 2
+[Worker 2] app=2 isi=halo -> HALO
+[Broker] balasan '2 HALO' | terlayani: {1: 1, 2: 1, 3: 0}
+Dibalas worker 2: HALO
+[Broker] request '1 30000' -> worker 3
+[Worker 3] app=1 isi=30000 -> 3245
+[Broker] balasan '3 3245' | terlayani: {1: 1, 2: 1, 3: 1}
+Dibalas worker 3: 3245
+[Broker] request '2 jaringan' -> worker 1
+[Worker 1] app=2 isi=jaringan -> JARINGAN
+[Broker] balasan '1 JARINGAN' | terlayani: {1: 2, 2: 1, 3: 1}
+Dibalas worker 1: JARINGAN
+[Broker] request '1 20000' -> worker 2
+[Worker 2] app=1 isi=20000 -> 2262
+[Broker] balasan '2 2262' | terlayani: {1: 2, 2: 2, 3: 1}
+Dibalas worker 2: 2262
+[Broker] request '2 komputasi' -> worker 3
+[Worker 3] app=2 isi=komputasi -> KOMPUTASI
+[Broker] balasan '3 KOMPUTASI' | terlayani: {1: 2, 2: 2, 3: 2}
+Dibalas worker 3: KOMPUTASI
+--- request bersamaan ---
+[Broker] request '1 300000' -> worker 1
+[Broker] request '2 ringan0' -> worker 2
+[Worker 2] app=2 isi=ringan0 -> RINGAN0
+[Broker] balasan '2 RINGAN0' | terlayani: {1: 2, 2: 3, 3: 2}
+Dibalas worker 2: RINGAN0
+[Broker] request '2 ringan1' -> worker 3
+[Worker 3] app=2 isi=ringan1 -> RINGAN1
+[Broker] balasan '3 RINGAN1' | terlayani: {1: 2, 2: 3, 3: 3}
+Dibalas worker 3: RINGAN1
+[Broker] request '2 ringan2' -> worker 2
+[Worker 2] app=2 isi=ringan2 -> RINGAN2
+[Broker] balasan '2 RINGAN2' | terlayani: {1: 2, 2: 4, 3: 3}
+Dibalas worker 2: RINGAN2
+[Broker] request '2 ringan3' -> worker 3
+[Worker 3] app=2 isi=ringan3 -> RINGAN3
+[Broker] balasan '3 RINGAN3' | terlayani: {1: 2, 2: 4, 3: 4}
+Dibalas worker 3: RINGAN3
+[Worker 1] app=1 isi=300000 -> 25997
+[Broker] balasan '1 25997' | terlayani: {1: 3, 2: 4, 3: 4}
+Dibalas worker 1: 25997
