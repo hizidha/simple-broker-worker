@@ -1,0 +1,8 @@
+flowchart TD
+    A(["Request masuk ke broker"]) --> L["Kunci data bersama<br/>(threading.Lock)"]
+    L --> B{"Strategi?"}
+    B -- "rr" --> C["wid = URUTAN[counter%3]<br/>counter = counter + 1"]
+    B -- "least" --> D["wid = worker dengan<br/>terlayani paling sedikit"]
+    D --> D2["Jika sama: pilih<br/>server-id terkecil"]
+    C --> E(["Kembalikan wid"])
+    D2 --> E

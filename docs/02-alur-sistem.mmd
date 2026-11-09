@@ -1,0 +1,18 @@
+flowchart TD
+    A(["Mulai: python run.py rr / least"]) --> B["Nyalakan Worker 1, 2, 3<br/>(port 9001-9003)"]
+    B --> C["Nyalakan Broker<br/>(port 9000, strategi rr / least)"]
+    C --> D["Client mengirim<br/>REQ app_id data"]
+    D --> E["Broker memilih worker<br/>dengan pilih_worker()"]
+    E --> F["Broker meneruskan request<br/>ke worker terpilih"]
+    F --> G{"Worker<br/>merespons?"}
+    G -- "Tidak" --> H["Broker membalas<br/>ERR worker tidak merespons"]
+    G -- "Ya" --> I["Worker mengerjakan<br/>LONG atau SHORT"]
+    I --> J["Worker membalas<br/>OK / ERR"]
+    J --> K["Broker: terlayani + 1"]
+    K --> L["Broker meneruskan balasan<br/>ke client"]
+    H --> M["Client mencetak balasan"]
+    L --> M
+    M --> N{"Masih ada<br/>request?"}
+    N -- "Ya" --> D
+    N -- "Tidak" --> O["Matikan broker dan worker"]
+    O --> P(["Selesai"])
