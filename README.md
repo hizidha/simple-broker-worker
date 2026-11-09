@@ -1,4 +1,4 @@
-# simple-broker-worker
+# SIMPLE BROKER-WORKER IMPLEMENTATION
 
 Tugas 1 – Socket untuk *Cluster Computing*
 Mata Kuliah **Komputasi Berbasis Jaringan** – S2 Informatika UNESA
