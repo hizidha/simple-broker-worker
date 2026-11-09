@@ -1,49 +1,63 @@
-[Worker 2] siap di port 9002
-[Broker] siap di port 9000, strategi=rr
-[Worker 3] siap di port 9003
-[Worker 1] siap di port 9001
-[Broker] request '1 50000' -> worker 1
-[Worker 1] app=1 isi=50000 -> 5133
-[Broker] balasan '1 5133' | terlayani: {1: 1, 2: 0, 3: 0}
-Dibalas worker 1: 5133
-[Broker] request '2 halo' -> worker 2
-[Worker 2] app=2 isi=halo -> HALO
-[Broker] balasan '2 HALO' | terlayani: {1: 1, 2: 1, 3: 0}
-Dibalas worker 2: HALO
-[Broker] request '1 30000' -> worker 3
-[Worker 3] app=1 isi=30000 -> 3245
-[Broker] balasan '3 3245' | terlayani: {1: 1, 2: 1, 3: 1}
-Dibalas worker 3: 3245
-[Broker] request '2 jaringan' -> worker 1
-[Worker 1] app=2 isi=jaringan -> JARINGAN
-[Broker] balasan '1 JARINGAN' | terlayani: {1: 2, 2: 1, 3: 1}
-Dibalas worker 1: JARINGAN
-[Broker] request '1 20000' -> worker 2
-[Worker 2] app=1 isi=20000 -> 2262
-[Broker] balasan '2 2262' | terlayani: {1: 2, 2: 2, 3: 1}
-Dibalas worker 2: 2262
-[Broker] request '2 komputasi' -> worker 3
-[Worker 3] app=2 isi=komputasi -> KOMPUTASI
-[Broker] balasan '3 KOMPUTASI' | terlayani: {1: 2, 2: 2, 3: 2}
-Dibalas worker 3: KOMPUTASI
+[Worker 1] siap di 127.0.0.1:9001
+[Worker 3] siap di 127.0.0.1:9003
+[Worker 2] siap di 127.0.0.1:9002
+[Broker] siap di 127.0.0.1:9000 | strategi=rr | worker={1: ('localhost', 9001), 2: ('localhost', 9002), 3: ('localhost', 
+[Broker] terima 'REQ 1 50000' -> teruskan ke worker 1 (localhost:9001)
+[Worker 1] terima 'REQ 1 50000' -> balas 'OK 1 5133'
+[Broker] balasan 'OK 1 5133' | terlayani: {1: 1, 2: 0, 3: 0}
+[Client] kirim 'REQ 1 50000' -> balasan 'OK 1 5133'
+[Broker] terima 'REQ 2 halo' -> teruskan ke worker 2 (localhost:9002)
+[Worker 2] terima 'REQ 2 halo' -> balas 'OK 2 HALO'
+[Broker] balasan 'OK 2 HALO' | terlayani: {1: 1, 2: 1, 3: 0}
+[Client] kirim 'REQ 2 halo' -> balasan 'OK 2 HALO'
+[Broker] terima 'REQ 1 30000' -> teruskan ke worker 3 (localhost:9003)
+[Worker 3] terima 'REQ 1 30000' -> balas 'OK 3 3245'
+[Broker] balasan 'OK 3 3245' | terlayani: {1: 1, 2: 1, 3: 1}
+[Client] kirim 'REQ 1 30000' -> balasan 'OK 3 3245'
+[Broker] terima 'REQ 2 jaringan' -> teruskan ke worker 1 (localhost:9001)
+[Worker 1] terima 'REQ 2 jaringan' -> balas 'OK 1 JARINGAN'
+[Broker] balasan 'OK 1 JARINGAN' | terlayani: {1: 2, 2: 1, 3: 1}
+[Client] kirim 'REQ 2 jaringan' -> balasan 'OK 1 JARINGAN'
+[Broker] terima 'REQ 1 20000' -> teruskan ke worker 2 (localhost:9002)
+[Worker 2] terima 'REQ 1 20000' -> balas 'OK 2 2262'
+[Broker] balasan 'OK 2 2262' | terlayani: {1: 2, 2: 2, 3: 1}
+[Client] kirim 'REQ 1 20000' -> balasan 'OK 2 2262'
+[Broker] terima 'REQ 1 50000' -> teruskan ke worker 3 (localhost:9003)
+[Broker] terima 'REQ 2 komputasi' -> teruskan ke worker 1 (localhost:9001)
+[Worker 3] terima 'REQ 1 50000' -> balas 'OK 3 5133'
+[Broker] balasan 'OK 3 5133' | terlayani: {1: 2, 2: 2, 3: 2}
+[Worker 1] terima 'REQ 2 komputasi' -> balas 'OK 1 KOMPUTASI'
+[Broker] balasan 'OK 1 KOMPUTASI' | terlayani: {1: 3, 2: 2, 3: 2}
+[Client] kirim 'REQ 2 komputasi' -> balasan 'OK 1 KOMPUTASI'
+[Broker] terima 'REQ 2 halo' -> teruskan ke worker 2 (localhost:9002)
+[Broker] terima 'REQ 7 salah' -> teruskan ke worker 3 (localhost:9003)
+[Worker 2] terima 'REQ 2 halo' -> balas 'OK 2 HALO'
+[Broker] balasan 'OK 2 HALO' | terlayani: {1: 3, 2: 3, 3: 2}
+[Worker 3] terima 'REQ 7 salah' -> balas 'ERR app_id atau data tidak valid'
+[Broker] balasan 'ERR app_id atau data tidak valid' | terlayani: {1: 3, 2: 3, 3: 3}
+[Client] kirim 'REQ 7 salah' -> balasan 'ERR app_id atau data tidak valid'
 --- request bersamaan ---
-[Broker] request '1 300000' -> worker 1
-[Broker] request '2 ringan0' -> worker 2
-[Worker 2] app=2 isi=ringan0 -> RINGAN0
-[Broker] balasan '2 RINGAN0' | terlayani: {1: 2, 2: 3, 3: 2}
-Dibalas worker 2: RINGAN0
-[Broker] request '2 ringan1' -> worker 3
-[Worker 3] app=2 isi=ringan1 -> RINGAN1
-[Broker] balasan '3 RINGAN1' | terlayani: {1: 2, 2: 3, 3: 3}
-Dibalas worker 3: RINGAN1
-[Broker] request '2 ringan2' -> worker 1
-[Worker 1] app=2 isi=ringan2 -> RINGAN2
-[Broker] request '2 ringan3' -> worker 2
-[Worker 2] app=2 isi=ringan3 -> RINGAN3
-[Broker] balasan '1 RINGAN2' | terlayani: {1: 3, 2: 3, 3: 3}[Broker] balasan '2 RINGAN3' | terlayani: {1: 3, 2: 4, 3: 3}
-
-Dibalas worker 1: RINGAN2
-Dibalas worker 2: RINGAN3
-[Worker 1] app=1 isi=300000 -> 25997
-[Broker] balasan '1 25997' | terlayani: {1: 4, 2: 4, 3: 3}
-Dibalas worker 1: 25997
+[Broker] terima 'REQ 1 30000' -> teruskan ke worker 1 (localhost:9001)
+[Broker] terima 'REQ 1 300000' -> teruskan ke worker 2 (localhost:9002)
+[Broker] terima 'REQ 2 ringan0' -> teruskan ke worker 3 (localhost:9003)
+[Broker] terima 'REQ 2 ringan1' -> teruskan ke worker 1 (localhost:9001)
+[Broker] terima 'REQ 2 ringan2' -> teruskan ke worker 2 (localhost:9002)
+[Broker] terima 'REQ 2 ringan3' -> teruskan ke worker 3 (localhost:9003)
+[Worker 1] terima 'REQ 1 30000' -> balas 'OK 1 3245'
+[Broker] balasan 'OK 1 3245' | terlayani: {1: 4, 2: 3, 3: 3}
+[Worker 3] terima 'REQ 2 ringan0' -> balas 'OK 3 RINGAN0'
+[Broker] balasan 'OK 3 RINGAN0' | terlayani: {1: 4, 2: 3, 3: 4}
+[Client] kirim 'REQ 2 ringan0' -> balasan 'OK 3 RINGAN0'
+[Worker 1] terima 'REQ 2 ringan1' -> balas 'OK 1 RINGAN1'
+[Broker] balasan 'OK 1 RINGAN1' | terlayani: {1: 5, 2: 3, 3: 4}
+[Client] kirim 'REQ 2 ringan1' -> balasan 'OK 1 RINGAN1'
+[Worker 2] terima 'REQ 2 ringan2' -> balas 'OK 2 RINGAN2'
+[Broker] balasan 'OK 2 RINGAN2' | terlayani: {1: 5, 2: 4, 3: 4}
+[Client] kirim 'REQ 2 ringan2' -> balasan 'OK 2 RINGAN2'
+[Worker 3] terima 'REQ 2 ringan3' -> balas 'OK 3 RINGAN3'
+[Broker] balasan 'OK 3 RINGAN3' | terlayani: {1: 5, 2: 4, 3: 5}
+[Client] kirim 'REQ 2 ringan3' -> balasan 'OK 3 RINGAN3'
+[Worker 2] terima 'REQ 1 300000' -> balas 'OK 2 25997'
+[Broker] balasan 'OK 2 25997' | terlayani: {1: 5, 2: 5, 3: 5}
+[Client] kirim 'REQ 1 300000' -> balasan 'OK 2 25997'
+[Broker] terima 'REQ 2 jaringan' -> teruskan ke worker 1 (localhost:9001)

@@ -1,47 +1,82 @@
-import socket, sys, threading
+# broker.py
+# Server utama (broker).
+# Tugasnya: menerima request dari client, memilih salah satu worker,
+# meneruskan (forward) request ke worker itu, lalu mengembalikan balasannya ke client.
+#
+# Contoh menjalankan:
+#   python broker.py --strategi rr
+#   python broker.py --strategi least --worker 1=192.168.1.10:9001 2=192.168.1.11:9002 3=localhost:9003
 
-strategi = sys.argv[1] if len(sys.argv) > 1 else "rr"
-WORKERS = {1: 9001, 2: 9002, 3: 9003}      # server-id -> port
-selesai = {1: 0, 2: 0, 3: 0}               # jumlah request yang sudah dilayani
-berjalan = {1: 0, 2: 0, 3: 0}              # request yang sedang diproses tiap worker
-counter = 0                                # counter broker (untuk rr)
-lock = threading.Lock()
+import argparse
+import socket
+import socketserver
+import threading
 
-def pilih():
+
+class ThreadedServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    # Server non-blocking berbasis thread: setiap client dilayani thread sendiri.
+    allow_reuse_address = True   # sama dengan SO_REUSEADDR
+    daemon_threads = True        # thread ikut berhenti saat server dihentikan
+
+
+def pilih_worker():
+    # Memilih worker sesuai strategi. Memakai lock karena banyak thread mengakses data yang sama.
     global counter
-    with lock:
-        if strategi == "rr":               # berurutan sesuai server-id
-            wid = counter % 3 + 1
+    with kunci:
+        if STRATEGI == "rr":
+            # Strategi 2: berurutan sesuai server-id berdasarkan counter milik broker.
+            wid = URUTAN[counter % len(URUTAN)]
             counter += 1
-        else:                              # least: paling sedikit beban berjalan, lalu paling sedikit terlayani
-            wid = min(WORKERS, key=lambda w: (berjalan[w], selesai[w], w))
-        berjalan[wid] += 1
-        return wid
+        else:
+            # Strategi 1: pemerataan jumlah request yang SUDAH DILAYANI tiap worker.
+            # Pilih yang paling sedikit; jika sama, pilih server-id terkecil.
+            wid = min(URUTAN, key=lambda w: (terlayani[w], w))
+    return wid
 
-def layani(client):
-    data = client.recv(1024).decode()
-    wid = pilih()
-    print(f"[Broker] request '{data}' -> worker {wid}")
-    try:
-        w = socket.socket()
-        w.connect(("localhost", WORKERS[wid]))
-        w.send(data.encode())
-        balasan = w.recv(1024).decode()
-        w.close()
-    except OSError:
-        balasan = f"{wid} ERROR worker tidak merespons"
-    with lock:
-        berjalan[wid] -= 1
-        selesai[wid] += 1
-    print(f"[Broker] balasan '{balasan}' | terlayani: {selesai}")
-    client.send(balasan.encode())
-    client.close()
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-s.bind(("localhost", 9000))
-s.listen(5)
-print(f"[Broker] siap di port 9000, strategi={strategi}")
-while True:
-    c, _ = s.accept()
-    threading.Thread(target=layani, args=(c,)).start()
+class BrokerHandler(socketserver.StreamRequestHandler):
+    # handle() dipanggil sekali untuk setiap koneksi dari client.
+    def handle(self):
+        pesan = self.rfile.readline().decode().strip()    # baca request client: "REQ <app_id> <data>"
+        wid = pilih_worker()                              # tentukan worker tujuan
+        host, port = WORKERS[wid]
+        print(f"[Broker] terima '{pesan}' -> teruskan ke worker {wid} ({host}:{port})")
+
+        try:
+            with socket.create_connection((host, port), timeout=60) as w:  # sambung ke worker
+                w.sendall((pesan + "\n").encode())                         # teruskan request
+                balasan = w.makefile().readline().strip()                  # tunggu satu baris balasan
+            with kunci:
+                terlayani[wid] += 1          # dihitung hanya jika worker benar-benar membalas
+        except OSError:
+            balasan = f"ERR worker {wid} tidak merespons"
+
+        print(f"[Broker] balasan '{balasan}' | terlayani: {terlayani}")
+        self.wfile.write((balasan + "\n").encode())       # kembalikan balasan ke client
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Broker pada cluster")
+    parser.add_argument("--host", default="0.0.0.0", help="0.0.0.0 = bisa diakses dari komputer lain")
+    parser.add_argument("--port", type=int, default=9000, help="port broker")
+    parser.add_argument("--strategi", choices=["rr", "least"], default="rr", help="strategi alokasi")
+    parser.add_argument("--worker", nargs="+", metavar="ID=HOST:PORT",
+                        default=["1=localhost:9001", "2=localhost:9002", "3=localhost:9003"],
+                        help="daftar alamat worker")
+    args = parser.parse_args()
+
+    WORKERS = {}                                     # server-id -> (host, port)
+    for item in args.worker:                         # contoh item: "1=localhost:9001"
+        wid, alamat = item.split("=")
+        host, port = alamat.split(":")
+        WORKERS[int(wid)] = (host, int(port))
+
+    STRATEGI = args.strategi
+    URUTAN = sorted(WORKERS)                         # urutan server-id: [1, 2, 3]
+    terlayani = {w: 0 for w in URUTAN}               # jumlah request yang sudah dilayani tiap worker
+    counter = 0                                      # counter milik broker (strategi rr)
+    kunci = threading.Lock()                         # pengaman data bersama antar-thread
+
+    server = ThreadedServer((args.host, args.port), BrokerHandler)  # bind + listen
+    print(f"[Broker] siap di {args.host}:{args.port} | strategi={STRATEGI} | worker={WORKERS}")
+    server.serve_forever()                                           # loop accept() selamanya
